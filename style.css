@@ -1,0 +1,100 @@
+/* === 공통 변수 === */
+:root {
+    --bg-main: #FFFFFF;       /* 메인 배경 */
+    --bg-sub: #FDFBF7;        /* 서브(등록) 배경 */
+    --card-main: #F1EBDF;     /* 메인 카드 */
+    --card-sub: #FFFFFF;      /* 서브 카드 */
+    --week-card: #F5F6F0;
+    
+    --primary-green: #A3D4A8;
+    --active-green: #8BC490;
+    --muted: #808F7F;
+    --accent: #C7BBAB;
+    --pill: #E6DED1;
+    
+    --text-dark: #333333;
+    --text-gray: #888888;
+    --border-radius: 18px;
+}
+
+/* === 초기화 === */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif; }
+body { background-color: #f0f0f0; min-height: 100vh; display: flex; justify-content: center; color: var(--text-dark); }
+a { text-decoration: none; color: inherit; }
+
+/* === 메인 화면 (index.html) 스타일 === */
+.home-body { background: var(--bg-main); }
+.wrap { width: 100%; max-width: 420px; background: var(--bg-main); padding: 18px 16px 96px; min-height: 100vh; position: relative; }
+
+/* 검색창 */
+.search { display: flex; align-items: center; background: var(--pill); padding: 10px 12px; border-radius: 20px; gap: 8px; margin-bottom: 24px; }
+.search input { border: 0; background: transparent; outline: none; font-size: 14px; width: 100%; }
+
+/* 메인 카드 공통 */
+.recruit-row { display: flex; gap: 12px; margin-bottom: 22px; }
+.recruit-card { background: var(--card-main); border-radius: var(--border-radius); padding: 14px; flex: 1; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.recruit-badge { background: var(--accent); padding: 6px 8px; border-radius: 10px; font-size: 11px; align-self: flex-start; margin-bottom: 8px; }
+.recruit-img { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+.img-placeholder { width: 100%; aspect-ratio: 3/4; background: #ddd; }
+.recruit-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.recruit-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* 주간 베스트 그리드 */
+.week-grid { background: var(--week-card); border-radius: var(--border-radius); padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-item { display: flex; gap: 10px; }
+.grid-item .thumb { width: 60px; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+.grid-item .info { display: flex; flex-direction: column; justify-content: center; }
+.grid-item .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.grid-item .meta { font-size: 11px; color: var(--muted); }
+
+/* 하단 네비게이션 */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #eee; height: 60px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { width: 100%; max-width: 420px; display: flex; justify-content: space-around; align-items: center; }
+.nav-btn { font-size: 12px; color: #999; padding: 10px; cursor: pointer; }
+.nav-btn.active { color: var(--text-dark); font-weight: bold; }
+
+/* 플로팅 버튼 (FAB) */
+.fab-btn {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(140px); /* 화면 오른쪽 하단 배치 */
+    width: 50px; height: 50px; background-color: var(--text-dark); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 101; cursor: pointer;
+}
+
+/* === 등록 화면 (register.html) 스타일 === */
+.mobile-container { width: 100%; max-width: 420px; background-color: var(--bg-sub); padding: 24px; min-height: 100vh; position: relative; padding-bottom: 80px; }
+
+/* 헤더 */
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+.page-header h1 { font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0; }
+.back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; }
+
+/* 입력 폼 공통 */
+.section-title { font-size: 16px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; display: block; }
+.input-group { margin-bottom: 24px; }
+.input-group input { width: 100%; padding: 12px 0; border: none; border-bottom: 1px solid #ddd; background: transparent; font-size: 16px; outline: none; }
+.card { background-color: var(--card-sub); margin-bottom: 32px; border-radius: 12px; } /* 배경색 필요 시 조정 */
+
+.input-row { display: flex; gap: 12px; }
+.input-box { flex: 1; }
+.input-box input { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-top: 8px; font-size: 14px; }
+
+/* 기간 표시 & 캘린더 */
+.date-display { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.date-display input { flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 8px; text-align: center; background: #fff; color: var(--text-dark); }
+
+.calendar-widget { background-color: #F7F2E9; border-radius: 16px; padding: 20px; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 700; font-size: 18px; }
+.calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--text-gray); margin-bottom: 12px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 12px; text-align: center; }
+
+.date-item { font-size: 14px; padding: 8px 0; cursor: pointer; border-radius: 50%; position: relative; color: var(--text-dark); }
+.date-item.selected { background-color: var(--primary-green); color: #fff; font-weight: bold; }
+.date-item.in-range { background-color: rgba(163, 212, 168, 0.3); border-radius: 0; }
+.date-item.range-start { border-top-left-radius: 50%; border-bottom-left-radius: 50%; }
+.date-item.range-end { border-top-right-radius: 50%; border-bottom-right-radius: 50%; }
+
+/* 하단 버튼 */
+.bottom-action { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 420px; padding: 20px; background: linear-gradient(to top, rgba(255,255,255,0.9) 80%, transparent); z-index: 10; }
+.submit-btn { width: 100%; background-color: var(--text-dark); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }

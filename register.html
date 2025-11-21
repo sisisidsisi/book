@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교환독서 등록</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <header class="page-header">
+            <button type="button" class="back-btn" onclick="location.href='index.html'">&lt;</button>
+            <h1>교환독서 만들기</h1>
+            <div style="width: 24px;"></div> </header>
+
+        <form id="exchangeForm">
+            <section class="input-group">
+                <label class="section-title">내가 제안할 교환 도서</label>
+                <input type="text" id="bookTitle" placeholder="책 제목을 입력해주세요" required>
+            </section>
+
+            <section class="card">
+                <h2 class="section-title">인원 설정</h2>
+                <div class="input-row">
+                    <div class="input-box">
+                        <label>참여 인원</label>
+                        <input type="number" id="memberCount" placeholder="명" min="2">
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="section-title">활동 기간</h2>
+                <div class="date-display">
+                    <input type="text" id="startDate" placeholder="시작일" readonly>
+                    <span>~</span>
+                    <input type="text" id="endDate" placeholder="종료일" readonly>
+                </div>
+
+                <div class="calendar-widget">
+                    <div class="calendar-header">
+                        <button type="button" class="nav-btn">&lt;</button>
+                        <span class="current-month">5월</span>
+                        <button type="button" class="nav-btn">&gt;</button>
+                    </div>
+                    <div class="calendar-grid-header">
+                        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        </div>
+                </div>
+            </section>
+
+            <div class="bottom-action">
+                <button type="submit" class="submit-btn">등록하기</button>
+            </div>
+        </form>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

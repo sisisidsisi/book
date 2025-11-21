@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>등록 완료</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+            text-align: center;
+        }
+        .icon-check {
+            font-size: 60px;
+            color: var(--primary-green);
+            margin-bottom: 20px;
+        }
+        .result-info {
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            margin-top: 30px;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .info-item { margin-bottom: 10px; font-size: 14px; color: var(--text-dark); }
+        .info-label { color: var(--text-gray); margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="result-container">
+            <div class="icon-check">✔</div>
+            <h2>교환독서가<br>성공적으로 등록되었습니다!</h2>
+            
+            <div class="result-info" id="resultInfo"></div>
+        </div>
+
+        <div class="bottom-action">
+            <button onclick="location.href='index.html'" class="submit-btn">홈으로 돌아가기</button>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const infoDiv = document.getElementById('resultInfo');
+            if(params.has('book')) {
+                infoDiv.innerHTML = `
+                    <div class="info-item"><span class="info-label">도서명:</span> <strong>${params.get('book')}</strong></div>
+                    <div class="info-item"><span class="info-label">인원:</span> ${params.get('count')}명</div>
+                    <div class="info-item"><span class="info-label">기간:</span> ${params.get('start')} ~ ${params.get('end')}</div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
