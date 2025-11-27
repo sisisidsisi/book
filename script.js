@@ -1,12 +1,24 @@
 // --- [설정] 구글 앱 스크립트 배포 URL (데이터 쓰기용) ---
-// 1. 도서 추천 시트
 const GAS_RECOMMEND_URL = 'https://script.google.com/macros/s/AKfycbzmQiwCxdlksvksA6g2H0G8kZLM8E9S51pW8pUyN1AIev1g-MnkmuTSqwYrSeA8tClp/exec';
-// 2. 도서 모집 시트
 const GAS_RECRUIT_URL = 'https://script.google.com/macros/s/AKfycbx2BiLeFyVYU9L467vBllQsbI2FPpnoHQh4IsPD37bSSw9TKOFddfe_WzHFDRRMPQv1Fg/exec';
 
 // --- [설정] 구글 시트 ID (데이터 읽기용 - 웹에 게시된 CSV) ---
 const SHEET_ID_RECRUIT = '1MPl-CxjbvgA1jt0BUD28B9K-sFXCY5tsURmcVlHRb3A';
 const SHEET_ID_RECOMMEND = '17BglRBld0Po3GAEdTCm2Z7mqRCDIbnj3PdXXjmifnP4'; 
+
+// --- [샘플 데이터] 시트가 비어있을 때 보여줄 기본 도서들 ---
+const SAMPLE_RECRUITS = [
+    { title: "모순", author: "양귀자", img: "https://via.placeholder.com/160x220/FFD1DC/ffffff?text=모순", badge: "1/4" },
+    { title: "물고기는 존재하지 않는다", author: "룰루 밀러", img: "https://via.placeholder.com/160x220/AEEEEE/ffffff?text=물고기", badge: "모집중" },
+    { title: "어서 오세요 휴남동 서점입니다", author: "황보름", img: "https://via.placeholder.com/160x220/E0E0E0/333333?text=휴남동", badge: "2/3" }
+];
+
+const SAMPLE_RECOMMENDS = [
+    { title: "세이노의 가르침", author: "세이노", img: "https://via.placeholder.com/160x220/333333/ffffff?text=세이노" },
+    { title: "도둑맞은 집중력", author: "요한 하리", img: "https://via.placeholder.com/160x220/FFAB91/ffffff?text=집중력" },
+    { title: "역행자", author: "자청", img: "https://via.placeholder.com/160x220/FFCC80/ffffff?text=역행자" },
+    { title: "구의 증명", author: "최진영", img: "https://via.placeholder.com/160x220/CE93D8/ffffff?text=구의증명" }
+];
 
 // --- [전역 변수] ---
 let historyStack = ['home'];
@@ -28,15 +40,15 @@ async function loadRecruitData() {
     const container = document.getElementById('recruit-list');
     if(!container) return; 
     
+    // 로컬 스토리지 데이터
     const localData = JSON.parse(localStorage.getItem('myRecruits')) || [];
-    renderRecruits(localData, container, false);
-
+    
     try {
         const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_RECRUIT}/pub?output=csv`);
         const text = await res.text();
         const rows = text.split('\n').slice(1);
         
-        const sheetData = [];
+        let sheetData = [];
         for (let row of rows) {
             const cols = row.split(',');
             if (cols.length < 1 || !cols[0]) continue;
@@ -47,9 +59,21 @@ async function loadRecruitData() {
                 badge: cols[4]?.trim() || '모집중' 
             });
         }
-        renderRecruits([...localData, ...sheetData], container, true);
+
+        // 데이터가 하나도 없으면 샘플 데이터 사용
+        const finalData = [...localData, ...sheetData];
+        if (finalData.length === 0) {
+            renderRecruits(SAMPLE_RECRUITS, container, true);
+        } else {
+            renderRecruits(finalData, container, true);
+        }
+        
         filterBooks();
-    } catch(e) { console.error("Recruit load fail", e); }
+    } catch(e) { 
+        console.error("Recruit load fail", e); 
+        // 에러 시 샘플 데이터 표시
+        renderRecruits([...localData, ...SAMPLE_RECRUITS], container, true);
+    }
 }
 
 function renderRecruits(list, container, clear) {
@@ -80,13 +104,18 @@ async function loadRecommendData() {
         const text = await res.text();
         const rows = text.split('\n').slice(1);
         
+        let hasData = false;
         container.innerHTML = '';
+        
         for (let row of rows) {
             const cols = row.split(',');
             if (cols.length < 1 || !cols[0]) continue;
+            
+            hasData = true;
             const title = cols[0].trim();
             const author = cols[1]?.trim() || '추천 도서';
-            const img = await fetchBookCover(title);
+            // 이미지가 URL형태가 아니면 API 호출, 맞으면 그대로 사용
+            const img = (cols[2] && cols[2].startsWith('http')) ? cols[2].trim() : await fetchBookCover(title);
 
             const div = document.createElement('div');
             div.className = 'card-grid';
@@ -99,8 +128,32 @@ async function loadRecommendData() {
             `;
             container.appendChild(div);
         }
+
+        // 시트에 데이터가 없으면 샘플 렌더링
+        if (!hasData) {
+            renderRecommends(SAMPLE_RECOMMENDS, container);
+        }
         filterBooks();
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        renderRecommends(SAMPLE_RECOMMENDS, container);
+    }
+}
+
+function renderRecommends(list, container) {
+    container.innerHTML = '';
+    list.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'card-grid';
+        div.onclick = () => openExchangeDetail(item.title, '인기');
+        div.innerHTML = `
+            <img src="${item.img}" alt="표지">
+            <div class="book-title">${item.title}</div>
+            <div class="book-author">${item.author}</div>
+            <div class="join-count">🔥 인기</div>
+        `;
+        container.appendChild(div);
+    });
 }
 
 // --- 검색 필터링 ---
