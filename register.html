@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>새 모임 만들기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="common-header">
+            <button class="back-btn" onclick="location.href='index.html'">⬅️</button>
+            <h2>새 모임 만들기 🌱</h2>
+        </header>
+
+        <section class="section">
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:bold; display:block; margin-bottom:8px;">도서명</label>
+                <input type="text" id="new-book-title" placeholder="책 제목을 정확히 입력해주세요">
+                <p style="font-size:11px; color:#7BC4B2; margin-top:5px;">* 제목을 입력하면 표지를 자동으로 찾아드려요!</p>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:bold; display:block; margin-bottom:8px;">작가명 (선택)</label>
+                <input type="text" id="new-book-author" placeholder="작가 이름">
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:bold; display:block; margin-bottom:8px;">인원</label>
+                <div style="display:flex; gap:10px;">
+                    <div style="padding:8px 15px; background:#E0F2F1; color:#009688; border-radius:10px; font-weight:bold; border:1px solid #009688;">2명</div>
+                    <div style="padding:8px 15px; background:white; border:1px solid #ddd; border-radius:10px;">3명</div>
+                    <div style="padding:8px 15px; background:white; border:1px solid #ddd; border-radius:10px;">4명</div>
+                </div>
+            </div>
+
+            <button class="btn-full" onclick="submitRecruit()">모임 등록하기</button>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
