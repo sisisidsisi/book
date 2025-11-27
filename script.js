@@ -6,44 +6,61 @@ const GAS_RECRUIT_URL = 'https://script.google.com/macros/s/AKfycbx2BiLeFyVYU9L4
 const SHEET_ID_RECRUIT = '1MPl-CxjbvgA1jt0BUD28B9K-sFXCY5tsURmcVlHRb3A';
 const SHEET_ID_RECOMMEND = '17BglRBld0Po3GAEdTCm2Z7mqRCDIbnj3PdXXjmifnP4'; 
 
-// --- [샘플 데이터] 시트가 비어있을 때 보여줄 기본 도서들 ---
+// --- [샘플 데이터] 시트가 비어있을 때 보여줄 기본 도서들 (이미지는 자동으로 찾음) ---
 const SAMPLE_RECRUITS = [
-    { title: "모순", author: "양귀자", img: "https://via.placeholder.com/160x220/FFD1DC/ffffff?text=모순", badge: "1/4" },
-    { title: "물고기는 존재하지 않는다", author: "룰루 밀러", img: "https://via.placeholder.com/160x220/AEEEEE/ffffff?text=물고기", badge: "모집중" },
-    { title: "어서 오세요 휴남동 서점입니다", author: "황보름", img: "https://via.placeholder.com/160x220/E0E0E0/333333?text=휴남동", badge: "2/3" }
+    { title: "모순", author: "양귀자", badge: "1/4" },
+    { title: "물고기는 존재하지 않는다", author: "룰루 밀러", badge: "모집중" },
+    { title: "어서 오세요 휴남동 서점입니다", author: "황보름", badge: "2/3" }
 ];
 
 const SAMPLE_RECOMMENDS = [
-    { title: "세이노의 가르침", author: "세이노", img: "https://via.placeholder.com/160x220/333333/ffffff?text=세이노" },
-    { title: "도둑맞은 집중력", author: "요한 하리", img: "https://via.placeholder.com/160x220/FFAB91/ffffff?text=집중력" },
-    { title: "역행자", author: "자청", img: "https://via.placeholder.com/160x220/FFCC80/ffffff?text=역행자" },
-    { title: "구의 증명", author: "최진영", img: "https://via.placeholder.com/160x220/CE93D8/ffffff?text=구의증명" }
+    { title: "세이노의 가르침", author: "세이노" },
+    { title: "도둑맞은 집중력", author: "요한 하리" },
+    { title: "역행자", author: "자청" },
+    { title: "구의 증명", author: "최진영" }
 ];
 
 // --- [전역 변수] ---
 let historyStack = ['home'];
 
-// --- API: 책 표지 찾기 ---
+// --- API: 책 표지 찾기 (HTTPS 강제 변환 추가) ---
 async function fetchBookCover(title) {
     try {
         const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title)}&maxResults=1`);
         const data = await response.json();
         if (data.items && data.items.length > 0) {
-            return data.items[0].volumeInfo.imageLinks?.thumbnail || "https://via.placeholder.com/160x220/cccccc/ffffff?text=No+Image";
+            let imgUrl = data.items[0].volumeInfo.imageLinks?.thumbnail;
+            if (imgUrl) {
+                // GitHub Pages 등 HTTPS 환경에서 이미지가 보이도록 http를 https로 변환
+                return imgUrl.replace(/^http:\/\//i, 'https://');
+            }
         }
     } catch (e) { console.error(e); }
     return "https://via.placeholder.com/160x220/cccccc/ffffff?text=No+Image";
 }
 
-// --- 모집 리스트 로드 (시트1) ---
+// --- 리스트의 이미지 자동 업데이트 헬퍼 함수 ---
+async function updateImagesForList(list) {
+    // 병렬로 이미지 찾기 수행
+    const promises = list.map(async (item) => {
+        if (!item.img || item.img.includes('via.placeholder.com')) {
+            item.img = await fetchBookCover(item.title);
+        }
+        return item;
+    });
+    return Promise.all(promises);
+}
+
+// --- 모집 리스트 로드 (시트1 + 로컬 + 샘플) ---
 async function loadRecruitData() {
     const container = document.getElementById('recruit-list');
     if(!container) return; 
     
-    // 로컬 스토리지 데이터
-    const localData = JSON.parse(localStorage.getItem('myRecruits')) || [];
+    // 1. 로컬 스토리지 데이터 로드
+    let localData = JSON.parse(localStorage.getItem('myRecruits')) || [];
     
     try {
+        // 2. 구글 시트 데이터 로드
         const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_RECRUIT}/pub?output=csv`);
         const text = await res.text();
         const rows = text.split('\n').slice(1);
@@ -55,24 +72,39 @@ async function loadRecruitData() {
             sheetData.push({
                 title: cols[0].trim(),
                 author: cols[1]?.trim() || '',
-                img: cols[2]?.trim() || await fetchBookCover(cols[0].trim()),
+                // 시트에 이미지가 없으면 빈 값으로 둠 (나중에 fetchBookCover로 채움)
+                img: (cols[2] && cols[2].startsWith('http')) ? cols[2].trim() : null, 
                 badge: cols[4]?.trim() || '모집중' 
             });
         }
 
-        // 데이터가 하나도 없으면 샘플 데이터 사용
-        const finalData = [...localData, ...sheetData];
+        // 3. 데이터 합치기 (로컬 + 시트)
+        let finalData = [...localData, ...sheetData];
+
+        // 4. 데이터가 하나도 없으면 샘플 사용
         if (finalData.length === 0) {
-            renderRecruits(SAMPLE_RECRUITS, container, true);
-        } else {
-            renderRecruits(finalData, container, true);
+            finalData = JSON.parse(JSON.stringify(SAMPLE_RECRUITS)); // 깊은 복사
         }
+
+        // 5. 이미지 없는 항목들 자동으로 채우기
+        // 일단 먼저 렌더링(스켈레톤 대신 내용을 보여줌)하고 이미지는 비동기로 업데이트
+        renderRecruits(finalData, container, true);
+        
+        // 이미지 비동기 로드 후 업데이트
+        const updatedData = await updateImagesForList(finalData);
+        renderRecruits(updatedData, container, true);
         
         filterBooks();
+
     } catch(e) { 
         console.error("Recruit load fail", e); 
-        // 에러 시 샘플 데이터 표시
-        renderRecruits([...localData, ...SAMPLE_RECRUITS], container, true);
+        // 에러 시 로컬+샘플로 표시
+        let fallbackData = [...localData];
+        if(fallbackData.length === 0) fallbackData = JSON.parse(JSON.stringify(SAMPLE_RECRUITS));
+        
+        renderRecruits(fallbackData, container, true);
+        const updatedFallback = await updateImagesForList(fallbackData);
+        renderRecruits(updatedFallback, container, true);
     }
 }
 
@@ -82,9 +114,14 @@ function renderRecruits(list, container, clear) {
         const div = document.createElement('div');
         div.className = 'card-tall';
         div.onclick = () => openExchangeDetail(item.title, 'D-Day');
+        // 이미지가 로딩 전이면 로딩바 표시
+        const imgTag = item.img 
+            ? `<img src="${item.img}" alt="표지">` 
+            : `<div class="loading-skeleton" style="height:190px; margin-bottom:12px;"></div>`;
+            
         div.innerHTML = `
             <div class="recruit-badge">${item.badge || 'NEW'}</div>
-            <img src="${item.img}" alt="표지">
+            ${imgTag}
             <div class="book-info-lg">
                 <div class="book-title-lg" style="margin-top:10px; font-weight:bold;">${item.title}</div>
                 <div class="book-desc-lg" style="font-size:12px; color:#888;">${item.author}</div>
@@ -94,7 +131,7 @@ function renderRecruits(list, container, clear) {
     });
 }
 
-// --- 추천 리스트 로드 (시트2) ---
+// --- 추천 리스트 로드 (시트2 + 샘플) ---
 async function loadRecommendData() {
     const container = document.getElementById('recommend-list');
     if(!container) return;
@@ -104,39 +141,39 @@ async function loadRecommendData() {
         const text = await res.text();
         const rows = text.split('\n').slice(1);
         
-        let hasData = false;
-        container.innerHTML = '';
-        
+        let recommendList = [];
         for (let row of rows) {
             const cols = row.split(',');
             if (cols.length < 1 || !cols[0]) continue;
             
-            hasData = true;
-            const title = cols[0].trim();
-            const author = cols[1]?.trim() || '추천 도서';
-            // 이미지가 URL형태가 아니면 API 호출, 맞으면 그대로 사용
-            const img = (cols[2] && cols[2].startsWith('http')) ? cols[2].trim() : await fetchBookCover(title);
-
-            const div = document.createElement('div');
-            div.className = 'card-grid';
-            div.onclick = () => openExchangeDetail(title, '인기');
-            div.innerHTML = `
-                <img src="${img}" alt="표지">
-                <div class="book-title">${title}</div>
-                <div class="book-author">${author}</div>
-                <div class="join-count">🔥 인기</div>
-            `;
-            container.appendChild(div);
+            recommendList.push({
+                title: cols[0].trim(),
+                author: cols[1]?.trim() || '추천 도서',
+                img: (cols[2] && cols[2].startsWith('http')) ? cols[2].trim() : null
+            });
         }
 
-        // 시트에 데이터가 없으면 샘플 렌더링
-        if (!hasData) {
-            renderRecommends(SAMPLE_RECOMMENDS, container);
+        // 데이터 없으면 샘플 사용
+        if (recommendList.length === 0) {
+            recommendList = JSON.parse(JSON.stringify(SAMPLE_RECOMMENDS));
         }
+
+        // 우선 렌더링
+        renderRecommends(recommendList, container);
+
+        // 이미지 비동기 업데이트
+        const updatedList = await updateImagesForList(recommendList);
+        renderRecommends(updatedList, container);
+        
         filterBooks();
+
     } catch(e) { 
         console.error(e); 
-        renderRecommends(SAMPLE_RECOMMENDS, container);
+        // 에러 시 샘플 사용
+        let fallback = JSON.parse(JSON.stringify(SAMPLE_RECOMMENDS));
+        renderRecommends(fallback, container);
+        const updatedFallback = await updateImagesForList(fallback);
+        renderRecommends(updatedFallback, container);
     }
 }
 
@@ -146,8 +183,13 @@ function renderRecommends(list, container) {
         const div = document.createElement('div');
         div.className = 'card-grid';
         div.onclick = () => openExchangeDetail(item.title, '인기');
+        
+        const imgTag = item.img 
+            ? `<img src="${item.img}" alt="표지">` 
+            : `<div class="loading-skeleton" style="height:160px; margin-bottom:10px;"></div>`;
+
         div.innerHTML = `
-            <img src="${item.img}" alt="표지">
+            ${imgTag}
             <div class="book-title">${item.title}</div>
             <div class="book-author">${item.author}</div>
             <div class="join-count">🔥 인기</div>
@@ -205,6 +247,7 @@ async function submitRecruit() {
     btn.innerText = "저장 중...";
     btn.disabled = true;
 
+    // 등록 시에도 HTTPS 변환된 이미지 사용
     const imgUrl = await fetchBookCover(title);
 
     try {
