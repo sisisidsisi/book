@@ -33,7 +33,7 @@
             </section>
         </div>
 
-        <!-- 2. 교환 페이지 (수정됨) -->
+        <!-- 2. 교환 페이지 -->
         <div id="exchange" class="page">
             <header class="common-header"><h2>나의 독서 메이트 💬</h2></header>
             
@@ -48,7 +48,7 @@
             <div class="fab" onclick="location.href='register.html'">✏️</div>
         </div>
 
-        <!-- 교환 상세 페이지 -->
+        <!-- 교환 상세 페이지 (수정됨: 상태 표시 및 액션 버튼) -->
         <div id="exchange-detail" class="page" style="z-index: 20; background: var(--bg-color);">
             <header class="common-header">
                 <button class="back-btn" onclick="goBack()">⬅️</button>
@@ -59,11 +59,21 @@
             </header>
             
             <section class="section" style="padding-top:10px;">
+                <!-- 독서 현황 텍스트 추가 -->
+                <div id="reading-status-text" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#555;">
+                    현재 3명 중 1명 완독 (33%)
+                </div>
+
                 <div class="participant-list">
+                    <!-- JS로 동적 제어됨 (기존 하드코딩 제거) -->
                     <div class="participant done"><div class="p-avatar" style="background-image:url('https://via.placeholder.com/55/AEEEEE/fff?text=Me');"></div><span class="p-name">나</span></div>
                     <div class="participant"><div class="p-avatar" style="background-image:url('https://via.placeholder.com/55/E0E0E0/fff?text=User');"></div><span class="p-name">멤버</span></div>
                 </div>
-                <button class="btn-full" style="margin-top:15px; background-color:#8CD790;" onclick="joinCurrentBook()">이 모임 참여하기 👋</button>
+                
+                <!-- 액션 버튼 (상황에 따라 텍스트/기능 변경) -->
+                <button id="btn-detail-action" class="btn-full" style="margin-top:15px; background-color:#8CD790;" onclick="handleDetailAction()">
+                    이 모임 참여하기 👋
+                </button>
             </section>
 
             <section class="section" style="flex:1;">
@@ -103,7 +113,7 @@
         </nav>
     </div>
 
-    <!-- 스크립트 연결 (인라인 코드 제거됨) -->
+    <!-- 스크립트 연결 -->
     <script src="script.js"></script>
 </body>
 </html>
