@@ -13,14 +13,13 @@
             <div class="home-header-area">
                 <div class="search-bar">
                     <span>🔍</span>
-                    <input type="text" placeholder="도서명, 작가 검색">
+                    <input type="text" id="searchInput" placeholder="도서명, 작가 검색" oninput="filterBooks()">
                 </div>
             </div>
 
             <section class="section">
                 <h2 class="section-title">모집 중인 교환독서</h2>
                 <div class="horizontal-scroll" id="recruit-list">
-                    <!-- 스크립트가 로드함 -->
                     <div class="card-tall"><div class="loading-skeleton"></div></div>
                 </div>
             </section>
@@ -29,7 +28,6 @@
                 <h2 class="section-title">추천 교환독서</h2>
                 <div style="font-size:11px; color:#999; margin-bottom:10px;">* 구글 시트 랭킹 연동</div>
                 <div class="vertical-list" id="recommend-list">
-                    <div class="card-grid"><div class="loading-skeleton"></div></div>
                     <div class="card-grid"><div class="loading-skeleton"></div></div>
                 </div>
             </section>
@@ -40,38 +38,75 @@
             <header class="common-header"><h2>나의 독서 메이트 💬</h2></header>
             <section class="section">
                 <h2 style="font-size:18px; font-weight:700; margin-bottom:15px;">진행 중인 독서</h2>
-                <!-- 예시 데이터 -->
-                <div class="card-grid" style="width:100%; display:flex; align-items:center; justify-content:space-between;">
-                    <div><h3>비가 왔을 때</h3><p style="font-size:12px; color:#888;">진행률 80%</p></div>
-                    <div>❯</div>
+                <div class="progress-card" onclick="openExchangeDetail('비가 왔을 때', 'D-7')">
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="font-size:16px;">비가 왔을 때</h3><span style="font-size:12px; font-weight:bold; color:#FF8A80;">D-7</span>
+                        </div>
+                        <div class="progress-bar-area"><div class="progress-bar-fill" style="width: 80%;"></div></div>
+                        <p style="font-size:11px; color:#888; margin-top:5px;">나의 진행률: 80%</p>
+                    </div>
+                    <div style="font-size:20px; margin-left:15px; color:#ddd;">❯</div>
                 </div>
             </section>
-            <!-- 플로팅 버튼: register.html로 이동 -->
             <div class="fab" onclick="location.href='register.html'">✏️</div>
+        </div>
+
+        <!-- 교환 상세 페이지 -->
+        <div id="exchange-detail" class="page" style="z-index: 20; background: var(--bg-color);">
+            <header class="common-header">
+                <button class="back-btn" onclick="goBack()">⬅️</button>
+                <div style="display:flex; flex-direction:column;">
+                    <h2 id="ex-detail-title">책 제목</h2>
+                    <span style="font-size:12px; color:var(--text-sub);">함께 읽는 중 • <span id="ex-detail-dday" style="color:#FF8A80; font-weight:bold;"></span></span>
+                </div>
+            </header>
+            <section class="section">
+                <h3 style="font-size:15px; margin-bottom:10px;">참여자 현황</h3>
+                <div class="participant-list">
+                    <div class="participant done"><div class="p-avatar" style="background-image:url('https://via.placeholder.com/55/AEEEEE/fff?text=Me');"></div><span class="p-name">나</span></div>
+                    <div class="participant"><div class="p-avatar" style="background-image:url('https://via.placeholder.com/55/E0E0E0/fff?text=User');"></div><span class="p-name">멤버</span></div>
+                </div>
+            </section>
+            <section class="section" style="flex:1;">
+                <h3 style="font-size:15px; margin-bottom:10px;">함께 읽는 수다방 💬</h3>
+                <div class="review-area">
+                    <div class="review-list" id="review-list"></div>
+                    <div class="input-area"><input type="text" id="review-input" placeholder="메시지 입력..."><button class="btn-send" onclick="addReview()">➤</button></div>
+                </div>
+            </section>
         </div>
 
         <!-- 3. 마이 페이지 -->
         <div id="my" class="page">
             <header class="common-header"><h2>마이 페이지 👤</h2></header>
             <section class="section">
-                <div style="text-align:center; padding:20px;">
-                    <div style="width:80px; height:80px; background:#ddd; border-radius:50%; margin:0 auto;"></div>
-                    <h3 style="margin-top:10px;">책읽는냥이</h3>
+                <div class="profile-card">
+                    <div class="profile-img-lg" id="my-profile-img" style="background-image:url('https://via.placeholder.com/80/7BC4B2/fff?text=Cat');"></div>
+                    <div><h3 style="font-size:18px; margin-bottom:5px;" id="my-nickname">책읽는냥이</h3></div>
+                </div>
+                <div class="menu-list">
+                    <div class="menu-item" onclick="switchTab('settings-profile')"><span>✏️ 프로필 수정</span><span>›</span></div>
+                    <div class="menu-item" onclick="handleLogout()"><span style="color:#FF8A80;">🚪 로그아웃</span></div>
                 </div>
             </section>
         </div>
 
-        <!-- 하단 네비게이션 -->
+        <!-- 설정 페이지 -->
+        <div id="settings-profile" class="page">
+            <header class="common-header"><button class="back-btn" onclick="goBack()">⬅️</button><h2>프로필 수정</h2></header>
+            <section class="section"><input type="text" id="edit-nickname" value="책읽는냥이" style="width:100%; padding:10px;"><button class="btn-full" onclick="saveProfile()">저장</button></section>
+        </div>
+
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchTab('home')"><span>🏠</span><span>홈</span></button>
-            <button class="nav-item" onclick="switchTab('exchange')"><span>💬</span><span>교환</span></button>
-            <button class="nav-item" onclick="switchTab('my')"><span>👤</span><span>마이</span></button>
+            <button class="nav-item active" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span>홈</span></button>
+            <button class="nav-item" onclick="switchTab('exchange')"><span class="nav-icon">💬</span><span>교환</span></button>
+            <button class="nav-item" onclick="switchTab('my')"><span class="nav-icon">👤</span><span>마이</span></button>
         </nav>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // 초기 데이터 로드
         window.onload = function() {
             loadRecruitData();
             loadRecommendData();
