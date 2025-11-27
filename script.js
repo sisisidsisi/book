@@ -1,8 +1,8 @@
-// --- [설정] 구글 앱 스크립트 배포 URL (데이터 쓰기용) ---
+// --- [설정] 구글 앱 스크립트 배포 URL ---
 const GAS_RECOMMEND_URL = 'https://script.google.com/macros/s/AKfycbzmQiwCxdlksvksA6g2H0G8kZLM8E9S51pW8pUyN1AIev1g-MnkmuTSqwYrSeA8tClp/exec';
 const GAS_RECRUIT_URL = 'https://script.google.com/macros/s/AKfycbx2BiLeFyVYU9L467vBllQsbI2FPpnoHQh4IsPD37bSSw9TKOFddfe_WzHFDRRMPQv1Fg/exec';
 
-// --- [설정] 구글 시트 ID (데이터 읽기용 - 웹에 게시된 CSV) ---
+// --- [설정] 구글 시트 ID ---
 const SHEET_ID_RECRUIT = '1MPl-CxjbvgA1jt0BUD28B9K-sFXCY5tsURmcVlHRb3A';
 const SHEET_ID_RECOMMEND = '17BglRBld0Po3GAEdTCm2Z7mqRCDIbnj3PdXXjmifnP4'; 
 
@@ -24,9 +24,8 @@ const SAMPLE_RECOMMENDS = [
 let historyStack = ['home'];
 let currentDetailBook = null; 
 
-// --- [초기화] 페이지 로드 시 실행 (오류 수정 핵심) ---
+// --- [초기화] ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 현재 페이지가 index.html 일 때만 데이터 로드
     if(document.getElementById('recruit-list')) {
         loadRecruitData();
         loadRecommendData();
@@ -46,7 +45,6 @@ async function fetchBookCover(title) {
     return "https://via.placeholder.com/160x220/cccccc/ffffff?text=Book";
 }
 
-// --- 이미지 업데이트 헬퍼 ---
 async function updateImagesForList(list) {
     const promises = list.map(async (item) => {
         if (!item.img || item.img.includes('via.placeholder.com')) {
@@ -58,7 +56,7 @@ async function updateImagesForList(list) {
     return Promise.all(promises);
 }
 
-// --- 모집 리스트 로드 ---
+// --- 데이터 로드 (모집) ---
 async function loadRecruitData() {
     const container = document.getElementById('recruit-list');
     if(!container) return; 
@@ -86,11 +84,7 @@ async function loadRecruitData() {
         if (finalData.length === 0) finalData = JSON.parse(JSON.stringify(SAMPLE_RECRUITS));
 
         renderRecruits(finalData, container, true);
-        
-        updateImagesForList(finalData).then(updatedData => {
-            renderRecruits(updatedData, container, true);
-        });
-        
+        updateImagesForList(finalData).then(updated => renderRecruits(updated, container, true));
         filterBooks();
 
     } catch(e) { 
@@ -107,7 +101,7 @@ function renderRecruits(list, container, clear) {
     list.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card-tall';
-        div.onclick = () => openExchangeDetail(item);
+        div.onclick = () => openExchangeDetail(item, 'recruit');
         
         const imgTag = item.img 
             ? `<img src="${item.img}" alt="표지" onerror="this.src='https://via.placeholder.com/160x220/e0e0e0/333333?text=Book'">` 
@@ -125,7 +119,7 @@ function renderRecruits(list, container, clear) {
     });
 }
 
-// --- 추천 리스트 로드 ---
+// --- 데이터 로드 (추천) ---
 async function loadRecommendData() {
     const container = document.getElementById('recommend-list');
     if(!container) return;
@@ -139,7 +133,6 @@ async function loadRecommendData() {
         for (let row of rows) {
             const cols = row.split(',');
             if (cols.length < 1 || !cols[0]) continue;
-            
             recommendList.push({
                 title: cols[0].trim(),
                 author: cols[1]?.trim() || '추천 도서',
@@ -150,7 +143,7 @@ async function loadRecommendData() {
         if (recommendList.length === 0) recommendList = JSON.parse(JSON.stringify(SAMPLE_RECOMMENDS));
 
         renderRecommends(recommendList, container);
-        updateImagesForList(recommendList).then(updatedList => renderRecommends(updatedList, container));
+        updateImagesForList(recommendList).then(updated => renderRecommends(updated, container));
         filterBooks();
 
     } catch(e) { 
@@ -166,7 +159,7 @@ function renderRecommends(list, container) {
     list.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card-grid';
-        div.onclick = () => openExchangeDetail(item);
+        div.onclick = () => openExchangeDetail(item, 'recommend');
         
         const imgTag = item.img 
             ? `<img src="${item.img}" alt="표지" onerror="this.src='https://via.placeholder.com/160x220/e0e0e0/333333?text=Book'">` 
@@ -182,7 +175,6 @@ function renderRecommends(list, container) {
     });
 }
 
-// --- [기능] 검색 필터링 ---
 function filterBooks() {
     const input = document.getElementById('searchInput');
     if(!input) return;
@@ -192,14 +184,12 @@ function filterBooks() {
         const text = card.innerText.toLowerCase();
         card.style.display = text.includes(query) ? 'flex' : 'none';
     });
-
     document.querySelectorAll('.card-grid').forEach(card => {
         const text = card.innerText.toLowerCase();
         card.style.display = text.includes(query) ? 'block' : 'none';
     });
 }
 
-// --- 인원수 선택 ---
 function selectMember(element) {
     const parent = element.parentElement;
     parent.querySelectorAll('div').forEach(opt => {
@@ -216,7 +206,6 @@ function selectMember(element) {
     element.style.fontWeight = 'bold';
 }
 
-// --- 모임 만들기 (GAS 전송) ---
 async function submitRecruit() {
     const title = document.getElementById('new-book-title').value.trim();
     const author = document.getElementById('new-book-author').value.trim();
@@ -239,9 +228,9 @@ async function submitRecruit() {
             body: JSON.stringify({ title: title, author: author, img: imgUrl, memberCount: memberCount })
         });
 
-        // 내가 만든 모임(myRecruits)에 저장
         const stored = JSON.parse(localStorage.getItem('myRecruits')) || [];
-        stored.unshift({ title, author, img: imgUrl, badge: memberCount });
+        // 내가 만든 모임은 isMyHosted: true 속성 추가
+        stored.unshift({ title, author, img: imgUrl, badge: memberCount, isMyHosted: true, readCount: 0 });
         localStorage.setItem('myRecruits', JSON.stringify(stored));
 
         window.location.href = 'result.html';
@@ -253,36 +242,123 @@ async function submitRecruit() {
     }
 }
 
-// --- 상세 페이지 열기 ---
-function openExchangeDetail(item) {
-    currentDetailBook = item; 
-    
+// --- [상세 페이지 로직] ---
+function openExchangeDetail(item, source = '') {
+    currentDetailBook = item;
+    currentDetailBook.source = source; // 어디서 왔는지(recruit, recommend, hosted, joined) 저장
+
     const t = document.getElementById('ex-detail-title');
     const d = document.getElementById('ex-detail-dday');
+    const btn = document.getElementById('btn-detail-action');
+    const statusText = document.getElementById('reading-status-text');
     
-    if(t && d) { 
+    if(t && d && btn) { 
         t.innerText = item.title; 
         d.innerText = (item.badge && item.badge.includes('/')) ? '모집중' : (item.badge || 'D-Day'); 
+        
+        // 상태 표시 (몇 명 읽었는지)
+        // badge가 '1/3' 형태라면 파싱, 아니면 기본값 0/3
+        let total = 3;
+        let current = item.readCount || 0;
+        
+        if (item.badge && item.badge.includes('/')) {
+            const parts = item.badge.split('/');
+            // total = parseInt(parts[1]) || 3; // 단순 모집 인원 표시용이라 실제 완독자 수는 아님
+        }
+        
+        statusText.innerText = `현재 ${total}명 중 ${current}명 완독 (${Math.round((current/total)*100)}%)`;
+
+        // 버튼 상태 결정
+        updateDetailButtonState(item);
+        
         switchTab('exchange-detail'); 
     }
 }
 
-// --- [기능] 모임 참여하기 ---
+function updateDetailButtonState(item) {
+    const btn = document.getElementById('btn-detail-action');
+    const joined = JSON.parse(localStorage.getItem('myJoinedExchanges')) || [];
+    const myRecruits = JSON.parse(localStorage.getItem('myRecruits')) || [];
+    
+    const isJoined = joined.some(book => book.title === item.title);
+    const isHosted = myRecruits.some(book => book.title === item.title && book.isMyHosted);
+
+    // 1. 이미 읽은 경우 (가장 우선)
+    if (item.isRead) {
+        btn.innerText = "🎉 완독했어요! (다음 사람에게 전달됨)";
+        btn.style.backgroundColor = "#ddd";
+        btn.style.color = "#555";
+        btn.disabled = true;
+    } 
+    // 2. 참여 중이거나 내가 만든 모임인 경우 -> '다 읽었어요' 버튼 표시
+    else if (isJoined || isHosted) {
+        btn.innerText = "📖 다 읽었어요! (완료하기)";
+        btn.style.backgroundColor = "#7BC4B2"; // 민트색
+        btn.style.color = "white";
+        btn.onclick = markAsRead; // 함수 연결 변경
+        btn.disabled = false;
+    } 
+    // 3. 참여하지 않은 경우 -> '참여하기' 버튼 표시
+    else {
+        btn.innerText = "이 모임 참여하기 👋";
+        btn.style.backgroundColor = "#8CD790"; // 연두색
+        btn.style.color = "white";
+        btn.onclick = joinCurrentBook; // 함수 연결 변경
+        btn.disabled = false;
+    }
+}
+
+// --- [기능] 참여하기 ---
 function joinCurrentBook() {
     if (!currentDetailBook) return;
-
+    
     const joined = JSON.parse(localStorage.getItem('myJoinedExchanges')) || [];
-    const isAlreadyJoined = joined.some(book => book.title === currentDetailBook.title);
-    if (isAlreadyJoined) {
-        alert("이미 참여 중인 모임입니다!");
-        return;
-    }
+    // 중복 체크
+    if (joined.some(book => book.title === currentDetailBook.title)) return;
 
+    currentDetailBook.readCount = currentDetailBook.readCount || 0; // 초기화
     joined.unshift(currentDetailBook);
     localStorage.setItem('myJoinedExchanges', JSON.stringify(joined));
 
-    alert(`'${currentDetailBook.title}' 모임에 참여했습니다! 🎉`);
-    switchTab('exchange'); 
+    alert(`'${currentDetailBook.title}' 모임에 참여했습니다!`);
+    
+    // 버튼 상태 즉시 업데이트
+    updateDetailButtonState(currentDetailBook);
+}
+
+// --- [기능] 다 읽었어요 (완독 처리) ---
+function markAsRead() {
+    if (!currentDetailBook) return;
+
+    if(confirm("정말 책을 다 읽으셨나요? 🎉")) {
+        currentDetailBook.isRead = true;
+        currentDetailBook.readCount = (currentDetailBook.readCount || 0) + 1;
+
+        // 로컬 스토리지 업데이트 (참여 리스트)
+        let joined = JSON.parse(localStorage.getItem('myJoinedExchanges')) || [];
+        const jIndex = joined.findIndex(b => b.title === currentDetailBook.title);
+        if(jIndex !== -1) {
+            joined[jIndex] = currentDetailBook;
+            localStorage.setItem('myJoinedExchanges', JSON.stringify(joined));
+        }
+
+        // 로컬 스토리지 업데이트 (호스트 리스트)
+        let hosted = JSON.parse(localStorage.getItem('myRecruits')) || [];
+        const hIndex = hosted.findIndex(b => b.title === currentDetailBook.title);
+        if(hIndex !== -1) {
+            hosted[hIndex] = currentDetailBook;
+            localStorage.setItem('myRecruits', JSON.stringify(hosted));
+        }
+
+        // UI 갱신
+        const statusText = document.getElementById('reading-status-text');
+        let total = 3; 
+        let current = currentDetailBook.readCount;
+        statusText.innerText = `현재 ${total}명 중 ${current}명 완독 (${Math.round((current/total)*100)}%)`;
+        
+        updateDetailButtonState(currentDetailBook);
+        alert("축하합니다! 완독 상태가 기록되었습니다.");
+    }
 }
 
 // --- [기능] 교환 탭 렌더링 ---
@@ -291,8 +367,10 @@ function loadExchangeTab() {
     const joinedList = document.getElementById('joined-list');
     
     if (hostingList) {
-        const myRecruits = JSON.parse(localStorage.getItem('myRecruits')) || [];
-        renderExchangeList(myRecruits, hostingList, '내가 만든 모임이 없습니다.');
+        // isMyHosted가 true인 것만 필터링 (예전 데이터 호환 위해 없으면 false 취급)
+        const allRecruits = JSON.parse(localStorage.getItem('myRecruits')) || [];
+        const myHosted = allRecruits.filter(item => item.isMyHosted);
+        renderExchangeList(myHosted, hostingList, '내가 만든 모임이 없습니다.');
     }
     
     if (joinedList) {
@@ -303,7 +381,7 @@ function loadExchangeTab() {
 
 function renderExchangeList(list, container, emptyMsg) {
     container.innerHTML = '';
-    if (list.length === 0) {
+    if (!list || list.length === 0) {
         container.innerHTML = `<div style="color:#999; font-size:13px; padding:10px; text-align:center;">${emptyMsg}</div>`;
         return;
     }
@@ -311,17 +389,20 @@ function renderExchangeList(list, container, emptyMsg) {
     list.forEach(item => {
         const div = document.createElement('div');
         div.className = 'progress-card';
-        div.onclick = () => openExchangeDetail(item);
+        div.onclick = () => openExchangeDetail(item, 'exchange');
         
-        const progress = Math.floor(Math.random() * 80) + 10; 
-        
+        // 완독 여부에 따라 진행률 표시 (완독시 100%)
+        const progress = item.isRead ? 100 : (Math.floor(Math.random() * 60) + 10); 
+        const statusColor = item.isRead ? "#8CD790" : "#7BC4B2";
+        const statusText = item.isRead ? "완독함 👑" : "진행중";
+
         div.innerHTML = `
             <div style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="font-size:16px;">${item.title}</h3>
-                    <span style="font-size:12px; font-weight:bold; color:#7BC4B2;">진행중</span>
+                    <span style="font-size:12px; font-weight:bold; color:${statusColor};">${statusText}</span>
                 </div>
-                <div class="progress-bar-area"><div class="progress-bar-fill" style="width: ${progress}%;"></div></div>
+                <div class="progress-bar-area"><div class="progress-bar-fill" style="width: ${progress}%; background-color:${statusColor}"></div></div>
                 <p style="font-size:11px; color:#888; margin-top:5px;">나의 진행률: ${progress}%</p>
             </div>
             <div style="font-size:20px; margin-left:15px; color:#ddd;">❯</div>
@@ -330,7 +411,6 @@ function renderExchangeList(list, container, emptyMsg) {
     });
 }
 
-// --- 탭 전환 / UI ---
 function switchTab(tabId, isBack = false) {
     if (!isBack) {
         if(['home', 'exchange', 'my'].includes(tabId)) historyStack = [tabId];
